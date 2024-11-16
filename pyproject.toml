@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "create-obsidian-note"
+version = "0.1.0"
+description = "Create Obsidian notes from transcription files"
+requires-python = ">=3.8"
+dependencies = [
+    "click",
+    "pyyaml",
+]
+
+[project.scripts]
+create-obsidian-note = "create_obsidian_note.cli:main"
+
+[project.entry-points."pipx.run"]
+create-obsidian-note = "create_obsidian_note.cli:main"
+
+[tool.ruff]
+line-length = 200
+target-version = "py38"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "D",  # pydocstyle
+    "UP", # pyupgrade
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package
+    "D203", # one-blank-line-before-class (in favor of D211)
+    "D212", # multi-line-summary-first-line (in favor of D213)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
