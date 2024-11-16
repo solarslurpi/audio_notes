@@ -1,5 +1,8 @@
+
 .vscode/
 .ruff_cache/
+*.mp3
+.gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
