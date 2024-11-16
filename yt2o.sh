@@ -1,15 +1,19 @@
 #!/bin/bash
 
+# Load environment variables
+source .env
+
 # Default values
 CLEANUP=false
-OBSIDIAN_DIR="G:/My Drive/Audios_To_Knowledge/knowledge/AskGrowBuddy/AskGrowBuddy/new_notes"
-OUTPUT_DIR="output"
+
 
 # Add timing variables
 START_TIME=$(date +%s)
 LAST_STEP_TIME=$START_TIME
 LAST_STEP_NAME=""
 
+# create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR"
+# exit 0
 # Function to print elapsed time of the previous step
 print_step() {
     local current_time=$(date +%s)
@@ -25,15 +29,25 @@ print_step() {
 }
 
 # Parse command line options
-while getopts "d:c" opt; do
-    case $opt in
-        d) OBSIDIAN_DIR="$OPTARG";;
-        c) CLEANUP=true;;
-        \?) echo "Invalid option: -$OPTARG" >&2; exit 1;;
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--obsidian-dir)
+            OBSIDIAN_DIR="$2"
+            shift 2
+            ;;
+        -c|--cleanup)
+            CLEANUP=true
+            shift
+            ;;
+        --debug)
+            DEBUG=true
+            shift
+            ;;
+        *)
+            break
+            ;;
     esac
 done
-
-shift $((OPTIND-1))
 
 # Check if URL is provided
 if [ -z "$1" ]; then
@@ -48,8 +62,27 @@ mkdir -p "$OUTPUT_DIR"
 
 print_step "📝 Setting the filename..."
 BASENAME=$(/usr/local/bin/yt-dlp --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
+# Remove any carriage returns Windows insertsfrom the variables
+OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '\r')
+BASENAME=$(echo "$BASENAME" | tr -d '\r')
+OBSIDIAN_DIR=$(echo "$OBSIDIAN_DIR" | tr -d '\r')
+# Check if Obsidian directory exists
+if [ ! -d "$OBSIDIAN_DIR" ]; then
+    echo "❌ Error: Obsidian directory does not exist: $OBSIDIAN_DIR"
+    echo "Please check your .env file and ensure the OBSIDIAN_DIR path is correct."
+    echo "Current OBSIDIAN_DIR: $OBSIDIAN_DIR"
+    exit 1
+fi
 
-echo "BASENAME: $BASENAME"
+if [ "$DEBUG" = true ]; then
+    echo "DEBUG VALUES:"
+    echo "BASENAME: $BASENAME"
+    echo "OBSIDIAN_DIR: $OBSIDIAN_DIR"
+    echo "OUTPUT_DIR: $OUTPUT_DIR"
+    echo "CLEANUP: $CLEANUP"
+    echo "URL: $1"
+    exit 0
+fi
 
 print_step "📥 Getting metadata and mp3 from the video..."
 /usr/local/bin/yt-dlp --verbose \
@@ -60,8 +93,8 @@ print_step "📥 Getting metadata and mp3 from the video..."
     --audio-quality 96 \
     --postprocessor-args "-ac 1 -ar 44100" \
     --write-info-json \
-    --output "$BASENAME" \
-    --paths "$OUTPUT_DIR" \
+    --output "${BASENAME}" \
+    --paths "${OUTPUT_DIR}" \
     "$URL"
 
 if [ $? -ne 0 ]; then
@@ -70,13 +103,23 @@ if [ $? -ne 0 ]; then
 fi
 
 print_step "🎙️ Transcribing audio..."
-# Using large-v2 model because transcribing larger files caused the system to crash with the large-v3 openai model.
-# Although the verdict is out. Because there are "optimizations" to try:
-# - --batch-size 4 (default is 124). The larger batch size uses more memory.
-# -- timestamp "chunk" (default is "chunk"). Chunk is faster but less accurate.
-# insanely-fast-whisper --model-name "distil-whisper/large-v2" --file-name "${OUTPUT_DIR}/${BASENAME}.mp3" --transcript-path "${OUTPUT_DIR}/${BASENAME}.json"
+MP3_PATH="${OUTPUT_DIR}/${BASENAME}.mp3"
+JSON_PATH="${OUTPUT_DIR}/${BASENAME}.json"
 
-insanely-fast-whisper --flash True --batch-size 4 --timestamp "chunk" --model-name "openai/whisper-large-v3" --file-name "${OUTPUT_DIR}/${BASENAME}.mp3" --transcript-path "${OUTPUT_DIR}/${BASENAME}.json"
+echo "Checking if MP3 exists: $MP3_PATH"
+if [ ! -f "$MP3_PATH" ]; then
+    echo "❌ MP3 file not found at: $MP3_PATH"
+    ls -la "${OUTPUT_DIR}"
+    exit 1
+fi
+
+insanely-fast-whisper \
+    --flash True \
+    --batch-size 4 \
+    --timestamp "chunk" \
+    --model-name "openai/whisper-large-v3" \
+    --file-name "$MP3_PATH" \
+    --transcript-path "$JSON_PATH"
 
 print_step "📝 Creating Obsidian note..."
 create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR"

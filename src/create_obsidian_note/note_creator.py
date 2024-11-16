@@ -86,10 +86,6 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
         NotADirectoryError: If Obsidian directory path exists but is not a directory.
 
     """
-    print("\nDEBUG VALUES:")
-    print(f"output_dir: {output_dir}")
-    print(f"basename: {basename}")
-    print(f"obsidian_dir: {obsidian_dir}")
     metadata_file = os.path.join(output_dir, f"{basename}.info.json")
     srt_file = os.path.join(output_dir, f"{basename}.json")
     obsidian_note = os.path.join(obsidian_dir, f"{basename}.md")
@@ -100,20 +96,13 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
     if not os.path.exists(srt_file):
         raise FileNotFoundError(f"SRT file not found : {srt_file}")
 
-    print("\nDEBUG VALUES:")
-    print(f"metadata_file: {metadata_file}")
-    print(f"srt_file: {srt_file}")
-    print(f"obsidian_dir: {obsidian_dir}")
-    print("-------------------")
     # Verify obsidian directory exists
     if not os.path.exists(obsidian_dir):
         raise FileNotFoundError(f"Obsidian directory {obsidian_dir} does not exist")
     if not os.path.isdir(obsidian_dir):
         raise NotADirectoryError(f"'{obsidian_dir}' exists but is not a directory")
     # Read metadata
-    print(f"Reading metadata from {metadata_file}")
-    print(f"Reading SRT from {srt_file}")
-    print(f"Writing to {obsidian_dir}")
+
     with open(metadata_file, encoding="utf-8") as f:
         metadata = json.load(f)
 
@@ -123,7 +112,6 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
     # Create Obsidian note
 
     # Create the full filepath using os.path.join to handle path separators correctly
-    print(f"Writing Obsidian note to {obsidian_note}")
     with open(obsidian_note, "w", encoding="utf-8") as f:
         _write_frontmatter(f, metadata)
         _write_srt_content(f, metadata, srt_content)

@@ -2,7 +2,7 @@ import click
 
 from .note_creator import create_obsidian_note
 
-OBSIDIAN_DIR = "G:/My Drive/Audios_To_Knowledge/knowledge/AskGrowBuddy/AskGrowBuddy/new_notes"
+OBSIDIAN_DIR = "/mnt/g/My Drive/Audios_To_Knowledge/knowledge/AskGrowBuddy/AskGrowBuddy/new_notes"
 
 
 @click.command()
@@ -19,6 +19,7 @@ def main(output_dir, basename, obsidian_dir, debug):
         click.echo(f"basename: {basename}")
         click.echo(f"obsidian_dir: {obsidian_dir}")
         click.echo("-------------------")
+        return  # Exit after debug output
 
     create_obsidian_note(output_dir, basename, obsidian_dir)
 

@@ -1,7 +1,7 @@
 # 🎵 Audio to Obsidian
 Two bash scripts:
 - yt2o.sh - YouTube to Obsidian Converter
-- mp32o.sh - MP3 to Obsidian Converter
+- mp32o.sh - MP3 to Obsidian Converter (TODO)
 can turn an audio file into a structured Obsidian note in which the frontmatter, tags, and chapters as well as the transcribed text are included.
 
 I am running this on a Windows machine, so I am using WSL to run the scripts.
@@ -31,6 +31,22 @@ I am running this on a Windows machine, so I am using WSL to run the scripts.
 - d: directory for output
 - c: clean up temporary files after processing
 ```
+## 🔧 Installation
+- Clone the repo: `git clone https://github.com/solarslurpi/audio_notes.git`
+- [Install `yt-dlp`](https://github.com/yt-dlp/yt-dlp)
+- Install `ffmpeg`: We are running on WSL, so
+```
+sudo apt update
+sudo apt install ffmpeg
+```
+- Install [`insanely-fast-whisper`](https://github.com/Vaibhavs10/insanely-fast-whisper)
+- Install `pipx`
+- Install `create-obsidian-note`: Go to the `auto_notes` directory created by cloning the repo and run `pipx install -e .` This will:
+  - Add the `create-obsidian-note` package to `PATH`.
+  - Allow running the package's command from any wsl terminal.
+  - Keep the installation linked to the code.
+
+
 ## 🛠️ Software
 ### 📥 1. yt-dlp
 I used `yt-dlp` to convert the YouTube video to mp3 as well as download the metadata associated with the video. The metadata is a rich source of information, particularly when chapters are included. Chapters break up the video and provide topic information.  These are preserved during the transcript.  If the metdata does not include chapter information, the transcript is broken into 5 minute time chunks.  I found if I just translated the text and wrote it out, Obsidian choked because there was no new line.
@@ -49,11 +65,11 @@ The third piece of software takes in the metadata file (`.info.json`) and the tr
 
 I created a `pipx` install for `create-obsidian-note` so that it is globally available within the `wsl` environment.
 
-## Python files
-### create_obsidian_note
+## 🐍 Python files
+### 🔧 create_obsidian_note
 `create_obsidian_note` is a Python package directory.  `pipx install -e .` modifies the pyproject.toml file by setting   `cli.py` as its main entry point. `pipx` also creates a proper Python package directory structure that includes `__init__.py` and `__main__.py` files.
 
-### cli.py
+### ⚙️ cli.py
 This is the command line interface using the `click` library for the `create-obsidian-note` Python script.
 
 #### Three arguments
@@ -74,7 +90,7 @@ It takes three arguments:
   - Base name
   - Obsidian directory path
 
-### note_creator.py
+### 📝 note_creator.py
 The function `create_obsidian_note` in `note_creator.py` takes in the metadata file (`.info.json`) and the transcription (`.json`) created by `insanely-fast-whisper` and creates an Obsidian note where many of the metadata fields are transferred as YAML frontmatter in the note.  The rest is the content, broken into chapter if chapter information was contained in within the metadata. If chapter information was not provided in the metadata, the text is broken into 5 minute time chunks.  Obsidian does not handle long chunks of text that does not have new lines.
 
 ## ⚠️ Troubleshooting
@@ -120,3 +136,15 @@ Key characteristics:
 - Uses batch commands and .bat scripts
 - Limited functionality compared to PowerShell or WSL
 - Primarily used for basic Windows administration tasks
+
+## 💾 Challenge When Notes are on Google Drive
+I store my Obsidian Notes on Google Drive.  I use the Windows `GoogleDrive` app to mount my Google Drive on my Windows machine.  The challenge is mounting this drive in WSL.  The "easiest" solution is to `sudo mount -t drvfs G: /mnt/g`.  First, I made sure `sudo mkdir /mnt/g` existed (which it did). Then ran the command. The first time it completed with an error, `WSL (129) ERROR: UtilCreateProcessAndWait:688: /bin/mount failed with status 0x2000`. I then ran within PowerShell as an admin:
+```
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+After doing this, I reran the command and rebooted. going to `/mnt/g` and there was `My Drive`.
+
+After a reboot, I found I had to redo the command `sudo mount -t drvfs G: /mnt/g`. This does not appear to be permanent.
+
+I am also having challenges after moving OUTPUT_DIR and OBSIDIAN_DIR default settings to the .env file. The script has challenges.  I tried removing the carriage returns/possible Windows artifacts.  But I am still a bit hit or miss with this working.
