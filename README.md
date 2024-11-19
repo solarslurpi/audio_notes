@@ -94,7 +94,9 @@ It takes three arguments:
 The function `create_obsidian_note` in `note_creator.py` takes in the metadata file (`.info.json`) and the transcription (`.json`) created by `insanely-fast-whisper` and creates an Obsidian note where many of the metadata fields are transferred as YAML frontmatter in the note.  The rest is the content, broken into chapter if chapter information was contained in within the metadata. If chapter information was not provided in the metadata, the text is broken into 5 minute time chunks.  Obsidian does not handle long chunks of text that does not have new lines.
 
 ## ⚠️ Troubleshooting
-
+- If the Google Drive can't be found:
+    - Make sure it is mounted (in Windows I run the app GoogleDrive)
+    - Make sure Google Drive is mounted in `WSL` with `sudo mount -t drvfs G: /mnt/g`
 - If the script fails to run, ensure it has execute permissions: `chmod +x yt2o.sh`
 - Check that all required tools (`yt-dlp`, `ffmpeg`, etc.) are installed and in your PATH
 
