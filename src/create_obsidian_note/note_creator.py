@@ -133,5 +133,3 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
     with open(obsidian_note, "w", encoding="utf-8") as f:
         _write_frontmatter(f, metadata)
         _write_srt_content(f, metadata, srt_content)
-
-create_obsidian_note("src/create_obsidian_note", "Episode_4_-_Interview_with_David_Bernard_Perron", "src/create_obsidian_note")
