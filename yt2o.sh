@@ -59,7 +59,7 @@ URL=$1
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
-
+# See the README for reasoning behind cookie-from-browser.
 print_step "📝 Setting the filename..."
 BASENAME=$(/usr/local/bin/yt-dlp --cookies-from-browser firefox --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
 echo "BASENAME: $BASENAME"
