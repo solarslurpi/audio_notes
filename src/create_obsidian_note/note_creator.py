@@ -28,25 +28,43 @@ def _write_frontmatter(f, data):
 
     f.write("---\n")
     yaml.dump(frontmatter, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=float("inf"), encoding=None)
-    f.write("---\n\n")
+    f.write("---\n")
 
 
 def _write_srt_content(f, metadata, srt_content_dict):
     """Write content with chapters if available, otherwise write all text."""
     chunks_dict = srt_content_dict.get("chunks", [])
+    if not chunks_dict and "speakers" in srt_content_dict:
+        chunks_dict = [srt_content_dict]
+
     text_segments = [{"start_time": chunk["timestamp"][0], "end_time": chunk["timestamp"][1], "text": chunk["text"].strip()} for chunk in chunks_dict]
 
     if metadata.get("chapters"):
+        current_segment_index = 0
         for chapter in metadata["chapters"]:
-            f.write(f"## {chapter['title']}\n")
+            # Replace untitled chapters with "Introduction"
+            title = "Introduction" if "<Untitled Chapter" in chapter['title'] else chapter['title']
+
+            f.write("\n")
+            f.write(f"## {title}\n")
             f.write(f"{chapter['start_time']}s - {chapter['end_time']}s\n\n")
 
             chapter_text = []
-            for segment in text_segments:
-                if segment["start_time"] >= chapter["start_time"] and segment["start_time"] < chapter["end_time"]:
+            while current_segment_index < len(text_segments):
+                segment = text_segments[current_segment_index]
+                if segment["start_time"] is None and chapter == metadata["chapters"][-1]:
                     chapter_text.append(segment["text"])
+                    current_segment_index += 1
+                    continue
 
-            f.write(" ".join(chapter_text) + "\n\n")
+                if segment["start_time"] >= chapter["end_time"]:
+                    break
+                if segment["start_time"] >= chapter["start_time"]:
+                    chapter_text.append(segment["text"])
+                current_segment_index += 1
+
+            # Add extra line break after the chapter text
+            f.write(" ".join(chapter_text) + "\n\n\n")
     else:
         time_marker_interval = 300  # 5 minutes in seconds
         current_text = []
@@ -115,3 +133,5 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
     with open(obsidian_note, "w", encoding="utf-8") as f:
         _write_frontmatter(f, metadata)
         _write_srt_content(f, metadata, srt_content)
+
+create_obsidian_note("src/create_obsidian_note", "Episode_4_-_Interview_with_David_Bernard_Perron", "src/create_obsidian_note")

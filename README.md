@@ -137,7 +137,14 @@ Key characteristics:
 - Limited functionality compared to PowerShell or WSL
 - Primarily used for basic Windows administration tasks
 
+## Challenge when YouTube videos are age restricted
+This is a real pain. The challenge is an authenticated connection is required to download age restricted videos. I ended up having to install Firefox.  Then copied the cookie file (`Cookies.sqlite`) from Firefox to the WSL environment.  To get to the cookies file in Firefox, enter `about:support` in the address bar and open the `Profile Folder`.  From here, you can go to the directory where the cookies file is stored. I copied this file into `WSL` in the directory `~/.mozilla/firefox/`.  Then `yt-dlp` worked on age restricted videos with the `--cookies-from-browser firefox` option  added.
+
+__Note:__ _What this probably means is that I need to run the scrip in the `WS>` `~` (`/root`) directory._
+
 ## 💾 Challenge When Notes are on Google Drive
+__NOTE:__ _I started writing the transcribed note to Google Drive. This is easy if Windows. With WSL, the file system is completely different. I try the approach below which works "most of the time". However, I am having an easier time just writing the notes to a WSL local directory and then copying them to Google Drive from there._
+
 I store my Obsidian Notes on Google Drive.  I use the Windows `GoogleDrive` app to mount my Google Drive on my Windows machine.  The challenge is mounting this drive in WSL.  The "easiest" solution is to `sudo mount -t drvfs G: /mnt/g`.  First, I made sure `sudo mkdir /mnt/g` existed (which it did). Then ran the command. The first time it completed with an error, `WSL (129) ERROR: UtilCreateProcessAndWait:688: /bin/mount failed with status 0x2000`. I then ran within PowerShell as an admin:
 ```
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart

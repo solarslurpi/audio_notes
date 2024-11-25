@@ -6,23 +6,18 @@ source .env
 # Default values
 CLEANUP=false
 
-
 # Add timing variables
 START_TIME=$(date +%s)
 LAST_STEP_TIME=$START_TIME
 LAST_STEP_NAME=""
 
-# create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR"
-# exit 0
 # Function to print elapsed time of the previous step
 print_step() {
     local current_time=$(date +%s)
-    # Print the time taken for the previous step if there was one
     if [ ! -z "$LAST_STEP_NAME" ]; then
         local step_duration=$((current_time - LAST_STEP_TIME))
         echo "⏱️ Previous step '$LAST_STEP_NAME' took: ${step_duration}s"
     fi
-    # Set up for the new step
     echo "$1"
     LAST_STEP_TIME=$current_time
     LAST_STEP_NAME="$1"
@@ -31,8 +26,8 @@ print_step() {
 # Parse command line options
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -d|--obsidian-dir)
-            OBSIDIAN_DIR="$2"
+        -d|--dir)
+            OUTPUT_DIR="$2"
             shift 2
             ;;
         -c|--cleanup)
@@ -51,34 +46,28 @@ done
 
 # Check if URL is provided
 if [ -z "$1" ]; then
-    echo "Usage: ./yt2o.sh [-d obsidian_dir] [-c] <youtube_url>"
+    echo "Usage: yt2o.sh [-d output_dir] [-c] <youtube_url>"
     exit 1
 fi
 
 URL=$1
-
+echo "URL: $URL"
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
-
+echo "OUTPUT_DIR: $OUTPUT_DIR"
 print_step "📝 Setting the filename..."
-BASENAME=$(/usr/local/bin/yt-dlp --cookies-from-browser firefox --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
-echo "BASENAME: $BASENAME"
-# Remove any carriage returns Windows insertsfrom the variables
+BASENAME=$(yt-dlp --cookies-from-browser firefox --restrict-filenames --get-title "$URL" | \
+    tr -cd '[:alnum:]_-' | \
+    cut -c1-50)
+
+# Remove any carriage returns
 OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '\r')
 BASENAME=$(echo "$BASENAME" | tr -d '\r')
-OBSIDIAN_DIR=$(echo "$OBSIDIAN_DIR" | tr -d '\r')
-# Check if Obsidian directory exists
-if [ ! -d "$OBSIDIAN_DIR" ]; then
-    echo "❌ Error: Obsidian directory does not exist: $OBSIDIAN_DIR"
-    echo "Please check your .env file and ensure the OBSIDIAN_DIR path is correct."
-    echo "Current OBSIDIAN_DIR: $OBSIDIAN_DIR"
-    exit 1
-fi
+echo "BASENAME: $BASENAME"
 
 if [ "$DEBUG" = true ]; then
     echo "DEBUG VALUES:"
     echo "BASENAME: $BASENAME"
-    echo "OBSIDIAN_DIR: $OBSIDIAN_DIR"
     echo "OUTPUT_DIR: $OUTPUT_DIR"
     echo "CLEANUP: $CLEANUP"
     echo "URL: $1"
@@ -86,7 +75,7 @@ if [ "$DEBUG" = true ]; then
 fi
 
 print_step "📥 Getting metadata and mp3 from the video..."
-/usr/local/bin/yt-dlp --verbose \
+yt-dlp --verbose \
     --cookies-from-browser firefox \
     --restrict-filenames \
     --format "bestaudio/best" \
@@ -114,16 +103,16 @@ if [ ! -f "$MP3_PATH" ]; then
     ls -la "${OUTPUT_DIR}"
     exit 1
 fi
-#     --flash True \
+    # --flash True \
 insanely-fast-whisper \
-    --batch-size 4 \
+ --batch-size 4 \
     --timestamp "chunk" \
     --model-name "openai/whisper-large-v3" \
     --file-name "$MP3_PATH" \
     --transcript-path "$JSON_PATH"
 
 print_step "📝 Creating Obsidian note..."
-create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR"
+create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OUTPUT_DIR"
 
 # For the final step
 END_TIME=$(date +%s)
