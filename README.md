@@ -67,7 +67,12 @@ I created a `pipx` install for `create-obsidian-note` so that it is globally ava
 
 ## 🐍 Python files
 ### 🔧 create_obsidian_note
-`create_obsidian_note` is a Python package directory.  `pipx install -e .` modifies the pyproject.toml file by setting   `cli.py` as its main entry point. `pipx` also creates a proper Python package directory structure that includes `__init__.py` and `__main__.py` files.
+`create_obsidian_note` is a Python package directory. If you have cloned the repo, you can install it with `pipx install -e .` If not
+```
+pipx install "git+https://<GITHUB ACCESS TOKEN>@github.com/solarslurpi/audio_notes.git"
+```
+
+`pipx`modifies the pyproject.toml file by setting   `cli.py` as its main entry point. `pipx` also creates a proper Python package directory structure that includes `__init__.py` and `__main__.py` files.
 
 ### ⚙️ cli.py
 This is the command line interface using the `click` library for the `create-obsidian-note` Python script.
@@ -141,6 +146,9 @@ Key characteristics:
 This is a real pain. The challenge is an authenticated connection is required to download age restricted videos. I ended up having to install Firefox.  Then copied the cookie file (`Cookies.sqlite`) from Firefox to the WSL environment.  To get to the cookies file in Firefox, enter `about:support` in the address bar and open the `Profile Folder`.  From here, you can go to the directory where the cookies file is stored. I copied this file into `WSL` in the directory `~/.mozilla/firefox/`.  Then `yt-dlp` worked on age restricted videos with the `--cookies-from-browser firefox` option  added.
 
 __Note:__ _What this probably means is that I need to run the scrip in the `WS>` `~` (`/root`) directory._
+
+## Downloading Livestreams
+I was looking at Reddit and a comment noted `yt-dlp --live-from-start [url]` will work on live streams. I have not tested this yet.
 
 ## 💾 Challenge When Notes are on Google Drive
 __NOTE:__ _I started writing the transcribed note to Google Drive. This is easy if Windows. With WSL, the file system is completely different. I try the approach below which works "most of the time". However, I am having an easier time just writing the notes to a WSL local directory and then copying them to Google Drive from there._

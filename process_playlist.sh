@@ -3,22 +3,20 @@
 # Create transcripts directory
 mkdir -p transcripts
 
-# List of video IDs to skip
-SKIP_IDS=("MNlooDlfJns","hsI2lbN8fj8","lVY1RlrX9fc","gW96L6Qycms")
+# List of video IDs to skip as bash array.
+SKIP_IDS=("MNlooDlfJns" "hsI2lbN8fj8" "gW96L6Qycms" "lVY1RlrX9fc")
+
+# Convert skip IDs array to string with | as separator for pattern matching. e.g.: "MNlooDlfJns|hsI2lbN8fj8|lVY1RlrX9fc|gW96L6Qycms"
+SKIP_PATTERN=$(IFS="|"; echo "${SKIP_IDS[*]}")
 
 # Get playlist videos and process each one
 yt-dlp --flat-playlist --get-id  --cookies-from-browser firefox "https://www.youtube.com/playlist?list=PLAwQgDrCXDe8kwi6revZdWubuTTWM9INn" | while read -r video_id; do
-    # Check if video_id is in skip list
-    skip=false
-    for skip_id in "${SKIP_IDS[@]}"; do
-        if [ "$video_id" = "$skip_id" ]; then
-            echo "Skipping video $video_id"
-            skip=true
-            break
-        fi
-    done
 
-    if [ "$skip" = true ]; then
+    # =~ is regex matching in bash.
+    # ^($SKIP_PATTERN)$ is a regex pattern that matches any of the SKIP_PATTERN strings, starting (^) and ending ($) with the first and last character of SKIP_PATTERN.
+    echo "---Checking if $video_id matches $SKIP_PATTERN"
+    if [[ $video_id =~ ^($SKIP_PATTERN)$ ]]; then
+        echo "Skipping video $video_id"
         continue
     fi
 
