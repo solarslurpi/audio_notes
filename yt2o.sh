@@ -3,17 +3,21 @@
 # Load environment variables
 source .env
 
+# Validate and set OUTPUT_DIR
+if [ -z "$OUTPUT_DIR" ]; then
+    OUTPUT_DIR="output"  # Default if not set
+fi
+# Ensure clean path without special characters
+OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '[]' | tr -d '\r')
+
 # Default values
 CLEANUP=false
-
 
 # Add timing variables
 START_TIME=$(date +%s)
 LAST_STEP_TIME=$START_TIME
 LAST_STEP_NAME=""
 
-# create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR"
-# exit 0
 # Function to print elapsed time of the previous step
 print_step() {
     local current_time=$(date +%s)
@@ -61,7 +65,8 @@ URL=$1
 mkdir -p "$OUTPUT_DIR"
 # See the README for reasoning behind cookie-from-browser.
 print_step "📝 Setting the filename..."
-BASENAME=$(/usr/local/bin/yt-dlp --cookies-from-browser firefox --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
+# Removed --cookies-from-browser firefox \ This was used because some of the Cannabis videos were age-restricted. It doesn't seem to consistently work.
+BASENAME=$(/usr/local/bin/yt-dlp  --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
 echo "BASENAME: $BASENAME"
 # Remove any carriage returns Windows insertsfrom the variables
 OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '\r')
@@ -84,10 +89,9 @@ if [ "$DEBUG" = true ]; then
     echo "URL: $1"
     exit 0
 fi
-
+  # Removed --cookies-from-browser firefox \ This was used because some of the Cannabis videos were age-restricted. It doesn't seem to consistently work.
 print_step "📥 Getting metadata and mp3 from the video..."
 /usr/local/bin/yt-dlp --verbose \
-    --cookies-from-browser firefox \
     --restrict-filenames \
     --format "bestaudio/best" \
     --extract-audio \
@@ -116,6 +120,7 @@ if [ ! -f "$MP3_PATH" ]; then
 fi
 #     --flash True \
 insanely-fast-whisper \
+    --flash True \
     --batch-size 4 \
     --timestamp "chunk" \
     --model-name "openai/whisper-large-v3" \

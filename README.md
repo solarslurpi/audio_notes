@@ -103,6 +103,13 @@ The function `create_obsidian_note` in `note_creator.py` takes in the metadata f
 - If the script fails to run, ensure it has execute permissions: `chmod +x yt2o.sh`
 - Check that all required tools (`yt-dlp`, `ffmpeg`, etc.) are installed and in your PATH
 
+### 🖥️Monitor GPU Usage
+To see if the GPU is being used:
+```
+watch -n 0.5 nvidia-smi
+```
+This command will update the GPU status every 0.5 seconds, allowing you to see real-time changes in GPU utilization and memory usage.
+
 ## ⚖️ License
 
 MIT License
