@@ -32,6 +32,35 @@ I am running this on a Windows machine, so I am using WSL to run the scripts.
 - c: clean up temporary files after processing
 ```
 ## 🔧 Installation
+### Install Flash Attension and insanely-fast-whisper on WSL
+I am using `WSL` on a Windows PC with an NVIDIA Graphics card.
+#### Open WSL and Update System
+- open a `WSL` window.
+- Make sure the `WSL` install is up to date: `sudo apt update && sudo apt upgrade`
+#### Install pipx
+- Install `pipx` if it is not already installed: `sudo apt install pipx`
+- Add the directory where `pipx` store applications to the PATH environment variable: `pipx ensurepath` 
+#### Install insanely-fast-whisper
+- Install `insanely-fast-whisper`: `pipx install insanely-fast-whisper --force --pip-args="--ignore-requires-python"`
+#### Install CUDA Toolkit
+- Assuming an NVIDIA graphics card:
+-   Install `NVCC`: `sudo apt install nvidia-cuda-toolkit`
+-   Verify install: `nvcc --version`
+#### Set CUDA_HOME and add to ~./bashrc
+- `CUDA_LIB_PATH=$(whereis cuda | cut -d' ' -f2)`  # Gets first path after 'cuda:'
+- `echo "export CUDA_HOME=$CUDA_LIB_PATH" >> ~/.bashrc`
+- `source ~/.bashrc` # Reload bash configuration file without need to restart a terminal.
+#### Install flash-attn
+`pipx runpip insanely-fast-whisper install flash-attn --no-build-isolation`
+```
+...
+Successfully built flash-attn
+Installing collected packages: flash-attn
+Successfully installed flash-attn-2.7.2.post1
+```
+
+# 7. Verify CUDA_HOME
+echo $CUDA_HOME
 - Clone the repo: `git clone https://github.com/solarslurpi/audio_notes.git`
 - [Install `yt-dlp`](https://github.com/yt-dlp/yt-dlp)
 - Install `ffmpeg`: We are running on WSL, so
