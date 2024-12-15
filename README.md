@@ -58,16 +58,21 @@ Successfully built flash-attn
 Installing collected packages: flash-attn
 Successfully installed flash-attn-2.7.2.post1
 ```
+### Install yt-dlp and ffmpeg
+`yt-dlp` uses `ffmpeg` in order to convert audio to a different format.
+- If you haven't done this in awhile: `sudo apt update && sudo apt upgrade`
+- `sudo apt install yt-dlp`
+- `sudo apt install ffmpeg`
+### Install create_obsidian_note
+`create_obsidian_note` is a Python package directory. 
+```
+pipx install "git+https://<GITHUB ACCESS TOKEN>@github.com/solarslurpi/audio_notes.git"
+```
 
-# 7. Verify CUDA_HOME
-echo $CUDA_HOME
-- Clone the repo: `git clone https://github.com/solarslurpi/audio_notes.git`
-- [Install `yt-dlp`](https://github.com/yt-dlp/yt-dlp)
-- Install `ffmpeg`: We are running on WSL, so
-```
-sudo apt update
-sudo apt install ffmpeg
-```
+
+TODO: REDO THE BELOW TO MAP TO THE ABOVE...in process....
+
+
 - Install [`insanely-fast-whisper`](https://github.com/Vaibhavs10/insanely-fast-whisper)
 - Install `pipx`
 - Install `create-obsidian-note`: Go to the `auto_notes` directory created by cloning the repo and run `pipx install -e .` This will:
