@@ -65,8 +65,17 @@ Successfully installed flash-attn-2.7.2.post1
 - `sudo apt install ffmpeg`
 ### Install create_obsidian_note
 `create_obsidian_note` is a Python package directory. 
+Set up the github token for access. The token provided allows read access to the `audio_notes` repo:
 ```
-pipx install "git+https://<GITHUB ACCESS TOKEN>@github.com/solarslurpi/audio_notes.git"
+nano ~/.git-credentials
+# Add this line:
+https://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@github.com
+```
+Save (`ctl-x` and then `y`)
+Set the proper permissions `chmod 600 ~/.git-credentials`
+install 
+```
+pipx install "git+https://github.com/solarslurpi/audio_notes.git"
 ```
 
 
