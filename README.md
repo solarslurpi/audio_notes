@@ -77,8 +77,25 @@ install
 ```
 pipx install "git+https://github.com/solarslurpi/audio_notes.git"
 ```
+### Copy over the yt2o.sh script
 
-
+1. Create a bin directory in your home folder if it doesn't exist:
+```bash
+mkdir -p ~/bin
+```
+2. Add this directory to your PATH if not already (add to ~/.bashrc):
+```bash
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+3. Navigate to bin directory:
+`cd ~/bin`
+4. Download the script:
+`wget https://raw.githubusercontent.com/solarslurpi/audio_notes/main/yt2o.sh`
+5. Make the script executable:
+```bash
+chmod +x ~/bin/yt2o.sh
+```
 TODO: REDO THE BELOW TO MAP TO THE ABOVE...in process....
 
 
