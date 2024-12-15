@@ -96,6 +96,19 @@ source ~/.bashrc
 ```bash
 chmod +x ~/bin/yt2o.sh
 ```
+
+## Debugging
+If you tried the `yt2o.sh` script and it failed, add `--debug` to the command line.  This will print out the values of the variables and then exit.  
+
+## Copying the Transcript
+I use `explore.exe` to copy the transcript to my Obsidian vault. Within a `wsl` terminal, I run:
+```
+/mnt/c/Windows/explore.exe .
+```
+From within the `transcripts` directory. I have my Obsidian vault on my Google Drive. Which I mount with the `GoogleDrive` app.
+---------------
+
+
 TODO: REDO THE BELOW TO MAP TO THE ABOVE...in process....
 
 

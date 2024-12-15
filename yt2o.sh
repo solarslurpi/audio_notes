@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Load environment variables
-source .env
 
 # Validate and set OUTPUT_DIR
 if [ -z "$OUTPUT_DIR" ]; then
@@ -9,6 +7,25 @@ if [ -z "$OUTPUT_DIR" ]; then
 fi
 # Ensure clean path without special characters
 OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '[]' | tr -d '\r')
+
+# Same for OBSIDIAN_DIR.
+if [ -z "$OBSIDIAN_DIR" ]; then
+    OBSIDIAN_DIR="transcripts"  # Default if not set
+fi
+OBSIDIAN_DIR=$(echo "$OBSIDIAN_DIR" | tr -d '[]' | tr -d '\r')
+
+# Check for yt-dlp installation
+YT_DLP=$(which yt-dlp)
+if [ -z "$YT_DLP" ]; then
+    echo "❌ Error: yt-dlp not found. Please install it first."
+    echo "Try: pip install yt-dlp"
+    echo "Or: sudo apt install yt-dlp"
+    exit 1
+fi
+
+
+
+
 
 # Default values
 CLEANUP=false
@@ -30,6 +47,12 @@ print_step() {
     echo "$1"
     LAST_STEP_TIME=$current_time
     LAST_STEP_NAME="$1"
+}
+
+cleanup() {
+    echo "🧹 Cleaning up temporary files..."
+    rm -rf "${OUTPUT_DIR:?}"/* # :? prevents deletion if OUTPUT_DIR is empty
+    rmdir "$OUTPUT_DIR"
 }
 
 # Parse command line options
@@ -66,7 +89,7 @@ mkdir -p "$OUTPUT_DIR"
 # See the README for reasoning behind cookie-from-browser.
 print_step "📝 Setting the filename..."
 # Removed --cookies-from-browser firefox \ This was used because some of the Cannabis videos were age-restricted. It doesn't seem to consistently work.
-BASENAME=$(/usr/local/bin/yt-dlp  --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
+BASENAME=$("$YT_DLP"  --restrict-filenames --print filename -o "%(title)s" "$URL" | tr -d '#')
 echo "BASENAME: $BASENAME"
 # Remove any carriage returns Windows insertsfrom the variables
 OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '\r')
@@ -81,7 +104,9 @@ if [ ! -d "$OBSIDIAN_DIR" ]; then
 fi
 
 if [ "$DEBUG" = true ]; then
-    echo "DEBUG VALUES:"
+    echo "🔍 DEBUG VALUES:"
+    echo "Command: $0 $@"
+    echo "Working Directory: $(pwd)"
     echo "BASENAME: $BASENAME"
     echo "OBSIDIAN_DIR: $OBSIDIAN_DIR"
     echo "OUTPUT_DIR: $OUTPUT_DIR"
@@ -91,7 +116,8 @@ if [ "$DEBUG" = true ]; then
 fi
   # Removed --cookies-from-browser firefox \ This was used because some of the Cannabis videos were age-restricted. It doesn't seem to consistently work.
 print_step "📥 Getting metadata and mp3 from the video..."
-/usr/local/bin/yt-dlp --verbose \
+
+"$YT_DLP" --verbose \
     --restrict-filenames \
     --format "bestaudio/best" \
     --extract-audio \
@@ -139,7 +165,5 @@ echo "✅ Processing complete!"
 
 # Clean up if requested
 if [ "$CLEANUP" = true ]; then
-    echo "🧹 Cleaning up temporary files..."
-    rm -rf "$OUTPUT_DIR"/*
-    rmdir "$OUTPUT_DIR"
+    cleanup
 fi
