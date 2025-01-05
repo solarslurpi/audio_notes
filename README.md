@@ -25,9 +25,10 @@ I am running this on a Windows machine, so I am using WSL to run the scripts.
 - `pipx` `create-obsidian-note` (custom Python script that builds the Obsidian note. Currently, it is installed via `pipx install -e .)
 
 ## 🚀 Usage
+Open a `WSL` terminal.  I put the finished transcript in a transcript directory that is a subdirectory of where I opened the terminal or navigated to.
 ```
-./yt2o.sh [OPTIONS] <YouTube_URL>
-./yt2o.sh -d ~/Documents/YouTube_Notes -c https://www.youtube.com/watch?v=dQw4w9WgXcQ
+yt2o.sh [OPTIONS] <YouTube_URL>
+yt2o.sh -d transcripts -c https://www.youtube.com/watch?v=dQw4w9WgXcQ
 - d: directory for output
 - c: clean up temporary files after processing
 ```
