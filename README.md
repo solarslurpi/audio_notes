@@ -1,8 +1,7 @@
 # 🎵 Audio to Obsidian
-Two bash scripts:
-- yt2o.sh - YouTube to Obsidian Converter
-- mp32o.sh - MP3 to Obsidian Converter (TODO)
-can turn an audio file into a structured Obsidian note in which the frontmatter, tags, and chapters as well as the transcribed text are included.
+## yt2o.sh - YouTube to Obsidian Converter
+Turns an audio file into a structured Obsidian note in which the frontmatter, tags, and chapters as well as the transcribed text are included.
+_Note: an Obsidian note is in markdown format which can easily be converted into a PDF. I use Obsidian for notetaking.  
 
 I am running this on a Windows machine, so I am using WSL to run the scripts.
 
