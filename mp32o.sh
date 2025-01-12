@@ -1,14 +1,64 @@
 #!/bin/bash
 
-# Default settings
-delete_original=false
-cleanup=false
-OUTPUT_DIR="output"
-OBSIDIAN_DIR="G:/My Drive/Audios_To_Knowledge/knowledge/AskGrowBuddy/AskGrowBuddy/new_notes"
+# Parse command line options
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -d|--obsidian-dir)
+            OBSIDIAN_DIR="$2"
+            shift 2
+            ;;
+        -c|--cleanup)
+            CLEANUP=true
+            shift
+            ;;
+        --debug)
+            DEBUG=true
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            echo "Usage: mp32o.sh [-d obsidian_dir] [-c] mp3_file"
+            exit 1
+            ;;
+        *)
+            # This is the MP3 file argument
+            MP3_PATH=$1
+            shift
+            break
+            ;;
+    esac
+done
 
-# Error handling
-set -e  # Exit on any error
-trap 'echo "❌ Error on line $LINENO. Exit code: $?"' ERR
+# Check if mp3 file is provided and exists
+if [ -z "$MP3_PATH" ]; then
+    echo "Usage: mp32o.sh [-d obsidian_dir] [-c] mp3_file"
+    exit 1
+fi
+
+if [[ ! "$MP3_PATH" =~ ^/ ]]; then
+    # If path doesn't start with /, it's relative - prepend current directory
+    MP3_PATH="$(pwd)/$MP3_PATH"
+fi
+if [ ! -f "$MP3_PATH" ]; then
+    echo "❌ Error: MP3 file not found: $MP3_PATH"
+    exit 1
+fi
+
+# Validate and set OUTPUT_DIR
+if [ -z "$OUTPUT_DIR" ]; then
+    OUTPUT_DIR="output"  # Default if not set
+fi
+# Ensure clean path without special characters
+OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '[]' | tr -d '\r')
+
+# Same for OBSIDIAN_DIR.
+if [ -z "$OBSIDIAN_DIR" ]; then
+    OBSIDIAN_DIR="transcripts"  # Default if not set
+fi
+OBSIDIAN_DIR=$(echo "$OBSIDIAN_DIR" | tr -d '[]' | tr -d '\r')
+
+# Default values
+CLEANUP=false
 
 # Add timing variables
 START_TIME=$(date +%s)
@@ -18,102 +68,84 @@ LAST_STEP_NAME=""
 # Function to print elapsed time of the previous step
 print_step() {
     local current_time=$(date +%s)
+    # Print the time taken for the previous step if there was one
     if [ ! -z "$LAST_STEP_NAME" ]; then
         local step_duration=$((current_time - LAST_STEP_TIME))
-        printf "⏱️  Previous step '%s' took: %ds\n" "$LAST_STEP_NAME" "$step_duration"
+        echo "⏱️ Previous step '$LAST_STEP_NAME' took: ${step_duration}s"
     fi
-    printf "\n🔄 %s\n" "$1"
+    # Set up for the new step
+    echo "$1"
     LAST_STEP_TIME=$current_time
     LAST_STEP_NAME="$1"
 }
 
-# Function to show usage
-show_usage() {
-    cat << EOF
-Usage: $(basename "$0") [-d] [-c] <input.mp3>
-
-Options:
-    -d    Delete original MP3 file after processing
-    -c    Clean up temporary files after processing
-
-Example:
-    $(basename "$0") -d -c input.mp3
-EOF
-    exit 1
+cleanup() {
+    echo "🧹 Cleaning up temporary files..."
+    rm -rf "${OUTPUT_DIR:?}"/* # :? prevents deletion if OUTPUT_DIR is empty
+    rmdir "$OUTPUT_DIR"
 }
 
-# Parse command line options
-while getopts "dc" opt; do
-    case $opt in
-        d) delete_original=true ;;
-        c) cleanup=true ;;
-        *) show_usage ;;
-    esac
-done
 
-# Shift past the options to get the input file
-shift $((OPTIND-1))
 
-# Validate input
-[[ $# -ne 1 ]] && show_usage
 
-input_file="$1"
-
-# Validate file
-if [[ ! -f "$input_file" ]]; then
-    echo "❌ Error: Input file '$input_file' not found"
-    exit 1
-fi
-
-# Validate extension
-if [[ "${input_file,,}" != *.mp3 ]]; then
-    echo "❌ Error: Input file must be an MP3 file"
-    exit 1
-fi
+basename="${MP3_PATH##*/}"  # Remove path
+BASENAME="${basename%.*}"   # Remove extension
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
-# Get basename without extension
-BASENAME=$(basename "$input_file" .mp3)
+# Remove any carriage returns Windows inserts 
+OUTPUT_DIR=$(echo "$OUTPUT_DIR" | tr -d '\r')
+BASENAME=$(echo "$BASENAME" | tr -d '\r')
+OBSIDIAN_DIR=$(echo "$OBSIDIAN_DIR" | tr -d '\r')
+# Check if Obsidian directory exists, create if it doesn't
+if [ ! -d "$OBSIDIAN_DIR" ]; then
+    echo "📁 Creating Obsidian directory: $OBSIDIAN_DIR"
+    mkdir -p "$OBSIDIAN_DIR"
+    if [ $? -ne 0 ]; then
+        echo "❌ Error: Could not create directory: $OBSIDIAN_DIR"
+        exit 1
+    fi
+fi
 
-# Main processing
-print_step "Copying MP3 to output directory"
-cp "$input_file" "${OUTPUT_DIR}/${BASENAME}.mp3" || {
-    echo "❌ Failed to copy MP3 file"
-    exit 1
-}
+if [ "$DEBUG" = true ]; then
+    echo "🔍 DEBUG VALUES:"
+    echo "Command: $0 $@"
+    echo "Working Directory: $(pwd)"
+    echo "Input MP3: $MP3_PATH"
+    echo "BASENAME: $BASENAME"
+    echo "OBSIDIAN_DIR: $OBSIDIAN_DIR"
+    echo "OUTPUT_DIR: $OUTPUT_DIR"
+    echo "CLEANUP: $CLEANUP"
+    echo "URL: $1"
+    exit 0
+fi
+ 
+print_step "🎙️ Transcribing audio..."
+JSON_PATH="${OUTPUT_DIR}/${BASENAME}.json"
 
-print_step "Transcribing audio"
-insanely-fast-whisper --batch-size 4 \
+
+#     --flash True \
+insanely-fast-whisper \
+    --flash True \
+    --batch-size 4 \
     --timestamp "chunk" \
     --model-name "openai/whisper-large-v3" \
-    --file-name "${OUTPUT_DIR}/${BASENAME}.mp3" \
-    --transcript-path "${OUTPUT_DIR}/${BASENAME}.json" || {
-    echo "❌ Transcription failed"
-    exit 1
-}
+    --file-name "$MP3_PATH" \
+    --transcript-path "$JSON_PATH"
 
-print_step "Creating Obsidian note"
-create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR" || {
-    echo "❌ Failed to create Obsidian note"
-    exit 1
-}
+print_step "📝 Creating Obsidian note..."
+# the --mp3-source option is handled by click and passed in as the mp3_source
+create-obsidian-note "${OUTPUT_DIR}" "${BASENAME}" "$OBSIDIAN_DIR" --mp3-source "$MP3_PATH"
 
-# Cleanup and final steps
-if [[ "$cleanup" == true ]]; then
-    print_step "Cleaning up temporary files"
-    rm -rf "${OUTPUT_DIR}"/* && rmdir "$OUTPUT_DIR"
-fi
-
-if [[ "$delete_original" == true ]]; then
-    print_step "Deleting original file"
-    rm "$input_file"
-fi
-
-# Final timing report
+# For the final step
 END_TIME=$(date +%s)
 TOTAL_TIME=$((END_TIME - START_TIME))
-printf "\n⏱️  Previous step '%s' took: %ds\n" "$LAST_STEP_NAME" $((END_TIME - LAST_STEP_TIME))
-printf "\n⏱️  Total processing time: %ds\n" "$TOTAL_TIME"
+echo "⏱️ Previous step '$LAST_STEP_NAME' took: $((END_TIME - LAST_STEP_TIME))s"
+echo -e "\n⏱️ Total processing time: ${TOTAL_TIME}s"
 echo "✅ Processing complete!"
+
+# Clean up if requested
+if [ "$CLEANUP" = true ]; then
+    cleanup
+fi

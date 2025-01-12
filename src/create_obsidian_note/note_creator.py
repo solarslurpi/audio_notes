@@ -12,19 +12,30 @@ def format_time(seconds):
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
 
-def _write_frontmatter(f, data):
-    """Write YouTube metadata as Obsidian frontmatter to an open file."""
-    frontmatter = {
-        "youtube_url": data.get("webpage_url", f'https://www.youtube.com/watch?v={data.get("id")}'),
-        "title": data.get("title"),
-        "tags": [],
-        "description": data.get("description", "").strip(),
-        "uploader_id": data.get("uploader_id"),
-        "channel": data.get("channel"),
-        "upload_date": data.get("upload_date"),
-        "duration": f"00:{data.get('duration', 0) // 60:02d}:{data.get('duration', 0) % 60:02d}",
-        "audio_quality": data.get("audio_quality", "medium"),
-    }
+def _write_frontmatter(f, data, mp3_source):
+    """Write metadata as Obsidian frontmatter to an open file."""
+    if mp3_source:
+     # MP3 metadata format
+        frontmatter = {
+            "title": data.get("title"),
+            "duration": data.get("duration", 0),
+            "audio_quality": data.get("audio_quality"),
+            "sample_rate": data.get("sample_rate"),
+            "file_path": data.get("file_path"),
+            "upload_date": data.get("upload_date"),
+        }
+    else:
+                # YouTube metadata format
+        frontmatter = {
+            "youtube_url": data.get("webpage_url", f'https://www.youtube.com/watch?v={data.get("id")}'),
+            "title": data.get("title"),
+            "tags": data.get("tags", []),
+            "description": data.get("description", "").strip(),
+            "uploader_id": data.get("uploader_id"),
+            "channel": data.get("channel"),
+            "upload_date": data.get("upload_date"),
+            "duration": f"00:{data.get('duration', 0) // 60:02d}:{data.get('duration', 0) % 60:02d}",
+        }
 
     f.write("---\n")
     yaml.dump(frontmatter, f, default_flow_style=False, allow_unicode=True, sort_keys=False, width=float("inf"), encoding=None)
@@ -90,7 +101,7 @@ def _write_srt_content(f, metadata, srt_content_dict):
             f.write(" ".join(current_text) + "\n\n")
 
 
-def create_obsidian_note(output_dir, basename, obsidian_dir):
+def create_obsidian_note(output_dir, basename, obsidian_dir, mp3_source=None):
     """
     Create an Obsidian note from a YouTube video.
 
@@ -98,19 +109,51 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
         output_dir (str): Directory containing the metadata and SRT files.
         basename (str): Base filename of the metadata (.info.json) and SRT (.json) files.
         obsidian_dir (str): Directory where the Obsidian note will be created.
+        is_mp3 (bool): Whether the input is an mp3 file. This is to handle the metadata.
 
     Raises:
-        FileNotFoundError: If metadata, SRT file or Obsidian directoryis not found.
+        FileNotFoundError: If metadata, SRT file or Obsidian directory is not found.
         NotADirectoryError: If Obsidian directory path exists but is not a directory.
 
     """
-    metadata_file = os.path.join(output_dir, f"{basename}.info.json")
+    def _create_mp3_metadata(mp3_path):
+        """Create basic metadata for MP3 files."""
+        import time
+        from mutagen.mp3 import MP3
+        try:
+            audio = MP3(mp3_path)
+            
+            metadata = {
+                "title": basename + ".mp3",
+                "duration": format_time(audio.info.length),  # in seconds
+                "audio_quality": f"{audio.info.bitrate // 1000}kbps",
+                "sample_rate": f"{audio.info.sample_rate}Hz",
+                "file_path": mp3_path,
+                "upload_date": time.strftime("%Y%m%d"),  # Today's date
+            }
+        except Exception:
+            raise
+        
+        return metadata
+    if mp3_source:
+        try:
+            metadata = _create_mp3_metadata(mp3_source)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"MP3 file not found: {mp3_source}")
+        except Exception as e:
+            raise Exception(f"Error creating metadata from MP3: {str(e)}")
+    else:
+        metadata_file = os.path.join(output_dir, f"{basename}.info.json")
+        if not os.path.exists(metadata_file):
+            raise FileNotFoundError(f"Metadata file not found : {metadata_file}")
+        # Read metadata
+        with open(metadata_file, encoding="utf-8") as f:
+            metadata = json.load(f)
     srt_file = os.path.join(output_dir, f"{basename}.json")
     obsidian_note = os.path.join(obsidian_dir, f"{basename}.md")
 
     # Now check if files exist
-    if not os.path.exists(metadata_file):
-        raise FileNotFoundError(f"Metadata file not found : {metadata_file}")
+
     if not os.path.exists(srt_file):
         raise FileNotFoundError(f"SRT file not found : {srt_file}")
 
@@ -119,10 +162,7 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
         raise FileNotFoundError(f"Obsidian directory {obsidian_dir} does not exist")
     if not os.path.isdir(obsidian_dir):
         raise NotADirectoryError(f"'{obsidian_dir}' exists but is not a directory")
-    # Read metadata
 
-    with open(metadata_file, encoding="utf-8") as f:
-        metadata = json.load(f)
 
     # Read SRT
     with open(srt_file, encoding="utf-8") as f:
@@ -131,5 +171,5 @@ def create_obsidian_note(output_dir, basename, obsidian_dir):
 
     # Create the full filepath using os.path.join to handle path separators correctly
     with open(obsidian_note, "w", encoding="utf-8") as f:
-        _write_frontmatter(f, metadata)
+        _write_frontmatter(f, metadata, mp3_source)
         _write_srt_content(f, metadata, srt_content)
